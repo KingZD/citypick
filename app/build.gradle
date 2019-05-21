@@ -1,0 +1,79 @@
+apply plugin: 'com.android.application'
+apply plugin: 'org.greenrobot.greendao'
+
+def releaseTime() {
+    return new Date().format("yyyy-MM-dd HH-mm-ss", TimeZone.getTimeZone("GMT+08"))
+}
+
+android {
+
+    compileSdkVersion rootProject.ext.android.compileSdkVersion
+    defaultConfig {
+        applicationId rootProject.ext.android.applicationId
+        minSdkVersion rootProject.ext.android.minSdkVersion
+        targetSdkVersion rootProject.ext.android.targetSdkVersion
+        versionCode rootProject.ext.android.versionCode
+        versionName rootProject.ext.android.versionName
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        flavorDimensions "default"
+        multiDexEnabled true
+        ndk {
+            // 设置支持的SO库架构
+            abiFilters 'armeabi', 'x86_64'//, 'x86 ','armeabi-v7a', 'arm64-v8a'
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            debuggable true
+        }
+    }
+
+    greendao {
+        schemaVersion 6 // 数据库版本号
+        daoPackage 'com.example.demo.greendao.dao'//greenDao 自动生成的代码保存的包名
+        targetGenDir 'src/main/java' //自动生成的代码存储的路径，默认是 build/generated/source/greendao.
+        generateTests false //true的时候自动生成测试单元
+    }
+
+    android {
+        applicationVariants.all { variant ->
+            //luoboyoujie_360_v1.1.0 正式包需要打包名字的格式
+            if (variant.buildType.name == 'release') {
+                variant.getPackageApplication().outputDirectory = new File(project.rootDir.absolutePath + "/app/build/outputs/release")
+                variant.getPackageApplication().outputScope.apkDatas.forEach { apkData ->
+                    //apkData.outputFileName = '萝卜有借_' + variant.buildType.name + "_" + variant.versionName + '_' + releaseTime() + '_' + variant.flavorName + '.apk'
+                    //这个修改输出APK的文件名
+                    apkData.outputFileName = "apk_" +
+                            variant.flavorName + '_' +
+                            variant.versionName + '_' +
+                            '.apk'
+                }
+            } else {
+                variant.outputs.all { output ->
+                    def buildName = "apk"
+                    def type = variant.buildType.name
+//                    def releaseApkName = buildName + '_' + type + "_" + variant.versionName + '_' + releaseTime() + '_' + variant.flavorName + '.apk'
+                    def releaseApkName = buildName + '_' + type + "_" + variant.versionName + '_' + variant.flavorName + '.apk'
+                    outputFileName = releaseApkName
+                }
+            }
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation rootProject.ext.dependencies["recyclerview-v7"]
+    implementation rootProject.ext.dependencies["support-appcompat-v7"]
+    implementation rootProject.ext.dependencies["support-design"]
+    implementation rootProject.ext.dependencies["cardview-v7"]
+    //adapter适配器
+    implementation rootProject.ext.dependencies["BaseRecyclerViewAdapterHelper"]
+    //数据库
+    implementation rootProject.ext.dependencies["greendao"]
+    implementation rootProject.ext.dependencies["sqlcipher"]
+}
